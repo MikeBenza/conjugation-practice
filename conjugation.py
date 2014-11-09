@@ -3,6 +3,7 @@ from __future__ import print_function
 import xml.dom.minidom
 
 import pprint
+import random
 import sys
 import traceback
 import time
@@ -31,6 +32,10 @@ SUBJ_MS = 0
 SUBJ_MP = 1
 SUBJ_FS = 2
 SUBJ_FP = 3
+
+STANDARD_SUBJECTS = [SUBJ_1PS, SUBJ_2PS, SUBJ_3PS, SUBJ_1PP, SUBJ_2PP, SUBJ_3PP]
+PRONOUNS = {SUBJ_1PS: u'je', SUBJ_2PS: u'tu', SUBJ_3PS: u'il', SUBJ_1PP: u'nous', SUBJ_2PP: u'vous', SUBJ_3PP: u'ils'}
+    
 
 def get_node_children(node):
     return (child for child in node.childNodes if child.nodeType == child.ELEMENT_NODE)
@@ -112,15 +117,38 @@ def load_conjugation_file(path):
         
     return conjugations
     
+def categorize(verbs):
+    result = {}
+    for (verb, (template, aspirate_h)) in verbs.items():
+        if not result.has_key(template):
+            result[template] = []
+        result[template].append(verb)
+    return result
+    
+def conjugate_verb(verb, conjugation, tense, subject):
+    inf_ending = conjugation[CONJ_INFINITIVE][SUBJ_INFINITIVE][0]
+    root = verb[::-1].replace(inf_ending[::-1], '', 1)[::-1]
+    return root + conjugation[tense][subject][0]
+
+def conjugate(verb, verbs, conjugations, tense, subject):
+    (template, aspirate_h) = verbs[verb]
+    conjugation = conjugations[template]
+    return conjugate_verb(verb, conjugation, tense, subject)
+    
 if __name__ == '__main__':
     start = time.time()
-    verbs = load_verb_file(r'C:\DeleteContentsDaily\verbiste-0.1.41\data\verbs-fr.xml')
+    verbs = load_verb_file(r'verbiste-0.1.41\data\verbs-fr.xml')
     end = time.time()
     print("Loaded verbs in %.3f seconds" % (end - start))
     
     start = time.time()
-    conjugations = load_conjugation_file(r'C:\DeleteContentsDaily\verbiste-0.1.41\data\conjugation-fr.xml')
+    conjugations = load_conjugation_file(r'verbiste-0.1.41\data\conjugation-fr.xml')
     end = time.time()
     print("Loaded conjugations in %.3f seconds" % (end - start))
-
+    
+    cats = categorize(verbs)
+    verb = random.choice(cats['aim:er'])
+    
+    for subject in STANDARD_SUBJECTS:
+        print("%s + %s: %s" % (PRONOUNS[subject], verb, conjugate(verb, verbs, conjugations, CONJ_IND_PRESENT, subject)))
     
